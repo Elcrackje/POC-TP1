@@ -1,0 +1,80 @@
+# HapSleep — contexto del proyecto (tesis)
+
+Este archivo es memoria de proyecto para Claude Code. Léelo completo antes de tocar cualquier PoC — evita repetir trabajo ya hecho, fugas de datos ya corregidas, y decisiones ya cerradas que no hay que relitigar.
+
+## Qué es HapSleep
+
+App que predice el riesgo de mala calidad de sueño en estudiantes universitarios de Lima usando datos de smartwatch, y un LLM que genera recomendaciones a partir de ese riesgo. Arquitectura simplificada: **ML1** (modelo de clasificación de riesgo) + **LLM** (recomendaciones a partir del output de ML1). En código/docs más viejos puede aparecer como C2 (=ML1) y C3 (=LLM) — son lo mismo.
+
+## Decisiones ya cerradas (no las relitigues)
+
+- **Random Forest elegido para ML1 por interpretabilidad**, para poder alimentarle al LLM un ranking de factores de riesgo explicable. Se comparó contra Logistic Regression y XGBoost con la misma metodología (ver poc1) — RF no pierde desempeño relevante y gana interpretabilidad. Esto ya se validó, no hay que reabrir la discusión de "qué modelo usar" sin una razón nueva y concreta.
+- **El riesgo es un constructo estable de la PERSONA, no de una noche puntual.** Ya validado en un análisis de autocorrelación/estabilidad previo (r=0.727): la calidad de sueño noche-a-noche es ~impredecible (lag-1 autocorr ≈ 0), pero el riesgo agregado por persona es estable. Todo el feature engineering agrega a nivel de persona (mean/std entre días), nunca predice noche por noche.
+- **Nunca reportar accuracy pelada con clases desbalanceadas** (~25% de riesgo alto). Siempre F1 + ROC-AUC + PR-AUC contra un baseline trivial (predice siempre la clase mayoritaria).
+- **Un solo K-Fold no alcanza con esta n.** Se comprobó empíricamente (poc1) que un solo Stratified 5-Fold tiene varianza enorme con n=71-150: el F1 de una sola corrida osciló entre 0.29 y 0.61 solo por la semilla del split. **Siempre usar Repeated Stratified K-Fold (20 repeticiones) y reportar mean ± std**, no un solo número. Esto aplica a cualquier PoC nuevo que evalúe un modelo.
+- **La etiqueta actual es un proxy**, no la etiqueta real. LifeSnaps (el dataset real usado en poc1) no tiene PSQI (Pittsburgh Sleep Quality Index) — se usa `sleep_points_percentage` (bottom 25% = riesgo alto) como proxy. Cuando existan los datos reales de la Capa A (encuesta PSQI, n≥50), hay que reemplazar la función de etiqueta por el Global PSQI Score (≥5 = mala calidad) y volver a correr todo. Los resultados de hoy no van al TI como resultado final del modelo con etiqueta real.
+
+## Fugas de datos ya encontradas y corregidas — no las repitas
+
+Dos fugas reales se encontraron y corrigieron en poc1 (documentadas en `poc1/README.md`, punto 5 de limitaciones):
+1. Dejar `sleep_points_percentage_mean` (fuente de la etiqueta) también como feature → resultados circulares.
+2. Dejar el `_std` de esa misma columna cruda después de excluir el `_mean` → sigue siendo fuga, porque ambas vienen de la misma medición.
+
+**Regla:** cada vez que cambies de dónde sale la etiqueta (por ejemplo, al conectar el PSQI real), excluye TODAS las variantes agregadas (`_mean`, `_std`, etc.) de la columna cruda usada, no solo la exacta. Con el PSQI real esta fuga específica no puede repetirse (es una fuente 100% independiente del wearable), pero el chequeo ("¿alguna feature de entrada deriva de la misma medición que la etiqueta?") vale la pena repetirlo siempre.
+
+## poc1/ — Random Forest sobre datos REALES (LifeSnaps, n=71)
+
+Dataset real: LifeSnaps (Fitbit Sense), Nature *Scientific Data* 2022, n=71 personas, 7,410 filas día-persona. Mismo dataset ya usado en el análisis de autocorrelación/estabilidad de la tesis.
+
+**Resultado oficial (Repeated Stratified 5-Fold, 20 repeticiones):**
+
+| Métrica | Valor |
+|---|---|
+| F1 | 0.478 ± 0.077 |
+| ROC-AUC | 0.728 ± 0.033 |
+| PR-AUC | 0.481 ± 0.046 |
+| Precisión | 0.531 ± 0.079 |
+| Recall | 0.439 ± 0.084 |
+
+**Hallazgos clave (detalle completo en `poc1/FINDINGS_POC1.md` y `poc1/README.md`):**
+- El F1=0.25 que se documentó originalmente (una sola corrida de 5-Fold) NO era el techo real del problema — era una corrida particularmente desafortunada. El número honesto es el de arriba.
+- Se probó agregar STAI (ansiedad) y PANAS (afecto) del export completo de encuestas de LifeSnaps como features psicológicas — no mejoran el modelo de forma robusta bajo repeated CV (parecía que sí con una sola semilla; era ruido). Se descartaron del pipeline oficial. Código del experimento en `poc1/checks/robustness_check.py` por si mejora la cobertura de encuestas (hoy 53-51/71 personas) y vale la pena reintentarlo.
+- Gini importance y permutation importance NO coinciden en el top-1 factor exacto (`minutesAwake_std` vs. `sedentary_minutes_mean`), pero las magnitudes son marginales y el top-4 cluster es estable: inconsistencia de sueño/vigilia noche a noche + inactividad. Recomendación de diseño: el payload C2→LLM debería comunicar "factores principales" en plural, no un solo ganador.
+- LR vs. RF vs. XGBoost (misma metodología): ningún modelo domina en todo. RF tiene mejor F1 (0.478), XGBoost mejor ROC-AUC/PR-AUC (0.755/0.493) pero peor recall (0.356), LR competitivo en F1 pero ROC-AUC más bajo (0.669).
+- No existe un benchmark de la literatura directamente comparable (n≈70-100 universitarios, riesgo por persona, RF) — documentado con 7 papers/revisión en `poc1/README.md`, sección "Contexto de benchmark en la literatura". Razón: task mismatch (la mayoría evalúa clasificación época-por-época contra PSG) y population mismatch (el único ROC-AUC alto de la literatura es en adultos mayores con regresión logística).
+
+**Pendiente de poc1:** `poc1/discusion_cap4_metricas.md` tiene un borrador de discusión para el Cap. 4 del TI (por qué F1+ROC-AUC en vez de accuracy) — NO está incorporado a ningún `.docx` todavía, y las citas vienen de una búsqueda asistida (NotebookLM) que no se verificó contra los PDFs originales.
+
+## poc2/ — ML1 sobre datos SINTÉTICOS de wearable (n=150)
+
+Datos generados por nosotros (no de ningún dataset público), con un `latent_risk` verdadero por persona guardado aparte y nunca visto por el modelo — para validar la arquitectura del pipeline, no el desempeño esperado en producción.
+
+**Resultado (Repeated Stratified 5-Fold, 20 repeticiones):** F1 = 0.869 ± 0.019, ROC-AUC = 0.988 ± 0.002, PR-AUC = 0.967 ± 0.005.
+
+**Validación contra ground truth (solo posible porque los datos son sintéticos):** correlación de Spearman entre `risk_probability` predicho y `latent_risk` real = 0.898; ROC-AUC contra la etiqueta verdadera = 0.991; acuerdo entre la etiqueta proxy y la verdadera = 97.3%.
+
+**Hallazgos clave (detalle en `poc2/FINDINGS_POC2.md` y `poc2/README.md`):**
+- El pipeline recupera casi perfectamente una señal de riesgo conocida cuando existe → confirma que la arquitectura (agregación por persona, feature engineering, RF, evaluación) está bien construida.
+- **Estos números NO son comparables con poc1** y no deben citarse como desempeño esperado en el TI — los datos sintéticos son más limpios que la realidad por diseño.
+- Hallazgo lateral importante: incluso en un mundo sintético limpio, la etiqueta proxy solo coincide 97.3% con el riesgo real — en poc1, donde el proxy es la única etiqueta disponible, ese desacuerdo real casi seguro es mayor. Refuerza la importancia de conseguir los datos reales de PSQI (Capa A).
+
+## Pendiente / próximos pasos (a la fecha de este resumen)
+
+1. **PoC del LLM (pendiente, no empezado):** usar payloads sintéticos tipo `poc1/c2_output_sample.json` (risk_level, risk_probability, top_risk_factor, feature importance) para probar cómo el LLM genera recomendaciones a partir del output de ML1. Va en un PoC 3 aparte cuando se retome.
+2. Revisar y verificar `poc1/discusion_cap4_metricas.md` contra las fuentes primarias antes de incorporarlo al `.docx` del TI.
+3. Cuando existan los datos reales de PSQI (Capa A), reemplazar la etiqueta proxy en poc1 y volver a correr todo el pipeline — los resultados actuales no son finales.
+4. Si se quiere estresar más el pipeline de poc2 (no solo confirmarlo), repetir con más ruido / missing data inyectado / relación no lineal entre features y riesgo.
+
+## Notas de entorno
+
+- Python 3.14 (`/c/Python314/python` en este equipo — puede variar en otra máquina).
+- Paquetes usados: `pandas numpy scikit-learn scipy xgboost`.
+- `C:\develop\tesis\POC 1\` (con espacio en el nombre) es un **respaldo intacto** del estado de poc1 antes de la sesión de limpieza — ya no se usa activamente, el trabajo vigente está en `poc1/` (sin espacio).
+
+## Disciplina a mantener en cualquier PoC nuevo
+
+- Repeated Stratified K-Fold (20 repeticiones), no un solo split ni un solo K-Fold — n siempre va a ser chica en este proyecto.
+- F1 + ROC-AUC + PR-AUC contra baseline trivial, nunca accuracy pelada.
+- Revisar fuga de datos cada vez que cambie de dónde sale la etiqueta (¿alguna feature deriva de la misma medición?).
+- Si se agregan features nuevas y "mejoran" el resultado con una sola corrida/semilla, validar con repeated CV antes de creerlo — ya pasó una vez (STAI/PANAS en poc1) que era ruido.
+- Documentar honestamente qué es dato real vs. sintético en cualquier README nuevo — no mezclar los dos sin aclararlo explícitamente.

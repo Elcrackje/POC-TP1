@@ -1,0 +1,15 @@
+# Dataset crudo de LifeSnaps — pesa demasiado para GitHub (rais_anonymized.zip ~615MB,
+# fitbit.bson ~9GB). No lo necesitas para correr los PoCs: los scripts usan los CSV
+# (csv_rais_anonymized/) y las encuestas (scored_surveys/), no el zip ni el dump de Mongo.
+# Descárgalo aparte si lo necesitas: ver poc1/README.md (Zenodo / Kaggle).
+**/rais_anonymized.zip
+**/mongo_rais_anonymized/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Entornos virtuales, por si acaso
+.venv/
+venv/

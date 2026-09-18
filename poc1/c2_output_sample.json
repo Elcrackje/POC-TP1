@@ -1,0 +1,293 @@
+[
+  {
+    "student_id": "621e2e8e67b776a24055b564",
+    "risk_level": "bajo",
+    "risk_probability": 0.157,
+    "top_risk_factor": "minutesAwake_std",
+    "top_risk_factor_value": 15.11,
+    "feature_importance_ranked": [
+      {
+        "feature": "minutesAwake_std",
+        "importance": 0.1482
+      },
+      {
+        "feature": "sleep_duration_inconsistency",
+        "importance": 0.1124
+      },
+      {
+        "feature": "sedentary_minutes_mean",
+        "importance": 0.1003
+      },
+      {
+        "feature": "steps_std",
+        "importance": 0.0598
+      },
+      {
+        "feature": "resting_hr_mean",
+        "importance": 0.0541
+      },
+      {
+        "feature": "minutesAsleep_mean",
+        "importance": 0.0535
+      },
+      {
+        "feature": "nremhr_std",
+        "importance": 0.0525
+      },
+      {
+        "feature": "sedentary_minutes_std",
+        "importance": 0.0501
+      },
+      {
+        "feature": "full_sleep_breathing_rate_std",
+        "importance": 0.0414
+      },
+      {
+        "feature": "minutesAwake_mean",
+        "importance": 0.0405
+      },
+      {
+        "feature": "resting_hr_std",
+        "importance": 0.0397
+      },
+      {
+        "feature": "sleep_efficiency_std",
+        "importance": 0.0386
+      },
+      {
+        "feature": "sleep_efficiency_mean",
+        "importance": 0.0368
+      },
+      {
+        "feature": "rmssd_std",
+        "importance": 0.0326
+      },
+      {
+        "feature": "steps_mean",
+        "importance": 0.0311
+      },
+      {
+        "feature": "spo2_std",
+        "importance": 0.0278
+      },
+      {
+        "feature": "spo2_mean",
+        "importance": 0.0216
+      },
+      {
+        "feature": "rmssd_mean",
+        "importance": 0.0202
+      },
+      {
+        "feature": "full_sleep_breathing_rate_mean",
+        "importance": 0.0185
+      },
+      {
+        "feature": "nremhr_mean",
+        "importance": 0.0162
+      },
+      {
+        "feature": "minutesToFallAsleep_std",
+        "importance": 0.0021
+      },
+      {
+        "feature": "minutesToFallAsleep_mean",
+        "importance": 0.0018
+      }
+    ]
+  },
+  {
+    "student_id": "621e2eaf67b776a2406b14ac",
+    "risk_level": "bajo",
+    "risk_probability": 0.187,
+    "top_risk_factor": "minutesAwake_std",
+    "top_risk_factor_value": 17.32,
+    "feature_importance_ranked": [
+      {
+        "feature": "minutesAwake_std",
+        "importance": 0.1482
+      },
+      {
+        "feature": "sleep_duration_inconsistency",
+        "importance": 0.1124
+      },
+      {
+        "feature": "sedentary_minutes_mean",
+        "importance": 0.1003
+      },
+      {
+        "feature": "steps_std",
+        "importance": 0.0598
+      },
+      {
+        "feature": "resting_hr_mean",
+        "importance": 0.0541
+      },
+      {
+        "feature": "minutesAsleep_mean",
+        "importance": 0.0535
+      },
+      {
+        "feature": "nremhr_std",
+        "importance": 0.0525
+      },
+      {
+        "feature": "sedentary_minutes_std",
+        "importance": 0.0501
+      },
+      {
+        "feature": "full_sleep_breathing_rate_std",
+        "importance": 0.0414
+      },
+      {
+        "feature": "minutesAwake_mean",
+        "importance": 0.0405
+      },
+      {
+        "feature": "resting_hr_std",
+        "importance": 0.0397
+      },
+      {
+        "feature": "sleep_efficiency_std",
+        "importance": 0.0386
+      },
+      {
+        "feature": "sleep_efficiency_mean",
+        "importance": 0.0368
+      },
+      {
+        "feature": "rmssd_std",
+        "importance": 0.0326
+      },
+      {
+        "feature": "steps_mean",
+        "importance": 0.0311
+      },
+      {
+        "feature": "spo2_std",
+        "importance": 0.0278
+      },
+      {
+        "feature": "spo2_mean",
+        "importance": 0.0216
+      },
+      {
+        "feature": "rmssd_mean",
+        "importance": 0.0202
+      },
+      {
+        "feature": "full_sleep_breathing_rate_mean",
+        "importance": 0.0185
+      },
+      {
+        "feature": "nremhr_mean",
+        "importance": 0.0162
+      },
+      {
+        "feature": "minutesToFallAsleep_std",
+        "importance": 0.0021
+      },
+      {
+        "feature": "minutesToFallAsleep_mean",
+        "importance": 0.0018
+      }
+    ]
+  },
+  {
+    "student_id": "621e2ed667b776a24085d8d1",
+    "risk_level": "bajo",
+    "risk_probability": 0.29,
+    "top_risk_factor": "minutesAwake_std",
+    "top_risk_factor_value": 18.6,
+    "feature_importance_ranked": [
+      {
+        "feature": "minutesAwake_std",
+        "importance": 0.1482
+      },
+      {
+        "feature": "sleep_duration_inconsistency",
+        "importance": 0.1124
+      },
+      {
+        "feature": "sedentary_minutes_mean",
+        "importance": 0.1003
+      },
+      {
+        "feature": "steps_std",
+        "importance": 0.0598
+      },
+      {
+        "feature": "resting_hr_mean",
+        "importance": 0.0541
+      },
+      {
+        "feature": "minutesAsleep_mean",
+        "importance": 0.0535
+      },
+      {
+        "feature": "nremhr_std",
+        "importance": 0.0525
+      },
+      {
+        "feature": "sedentary_minutes_std",
+        "importance": 0.0501
+      },
+      {
+        "feature": "full_sleep_breathing_rate_std",
+        "importance": 0.0414
+      },
+      {
+        "feature": "minutesAwake_mean",
+        "importance": 0.0405
+      },
+      {
+        "feature": "resting_hr_std",
+        "importance": 0.0397
+      },
+      {
+        "feature": "sleep_efficiency_std",
+        "importance": 0.0386
+      },
+      {
+        "feature": "sleep_efficiency_mean",
+        "importance": 0.0368
+      },
+      {
+        "feature": "rmssd_std",
+        "importance": 0.0326
+      },
+      {
+        "feature": "steps_mean",
+        "importance": 0.0311
+      },
+      {
+        "feature": "spo2_std",
+        "importance": 0.0278
+      },
+      {
+        "feature": "spo2_mean",
+        "importance": 0.0216
+      },
+      {
+        "feature": "rmssd_mean",
+        "importance": 0.0202
+      },
+      {
+        "feature": "full_sleep_breathing_rate_mean",
+        "importance": 0.0185
+      },
+      {
+        "feature": "nremhr_mean",
+        "importance": 0.0162
+      },
+      {
+        "feature": "minutesToFallAsleep_std",
+        "importance": 0.0021
+      },
+      {
+        "feature": "minutesToFallAsleep_mean",
+        "importance": 0.0018
+      }
+    ]
+  }
+]
