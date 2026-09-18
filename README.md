@@ -6,6 +6,11 @@ Tesis: app que predice riesgo de mala calidad de sueño en estudiantes universit
 
 ## Carpetas
 
+### [`poc_clean/`](poc_clean/) — versiones limpias para mostrarle al asesor
+
+Notebooks documentados, pensados para correr por partes, con los mismos resultados ya validados
+de `poc1/`/`poc2/` (no introducen metodología nueva). Empieza aquí si necesitas presentar avances.
+
 ### [`poc1/`](poc1/) — ML1 (Random Forest) sobre datos REALES
 
 Dataset real: LifeSnaps (Fitbit Sense), n=71 estudiantes/personas reales. Resultado oficial (Repeated Stratified 5-Fold CV, 20 repeticiones):
