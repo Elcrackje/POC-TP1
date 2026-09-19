@@ -17,6 +17,10 @@ completo del proyecto.
 - [`POC1_3/`](POC1_3/) — POC 1.3: en vez de una etiqueta por percentil, el modelo predice un puntaje continuo y el
   riesgo se obtiene con un corte fijo. Incluye la explicación de cómo se calcula el valor y un ejemplo de la salida de
   ML1. Notebook: [`POC1_3/POC1_3_Puntaje_continuo.ipynb`](POC1_3/POC1_3_Puntaje_continuo.ipynb).
+- [`POC1_5/`](POC1_5/) — POC 1.5: laboratorio sintético con verdad conocida. Compara etiqueta por percentil, corte fijo y
+  puntaje continuo cuando la población cambia (todos duermen mal, mixta, todos bien), y estima qué esperar con 50 personas
+  según cuánto del puntaje refleje el reloj. No mide desempeño real. Notebook:
+  [`POC1_5/POC1_5_Sintetico.ipynb`](POC1_5/POC1_5_Sintetico.ipynb).
 - [`multiwearable/`](multiwearable/) — investigación (sin PoC corrido) de qué variables entrega cada marca de reloj
   Android (Fitbit, Samsung, Amazfit, Xiaomi) vía Health Connect / Google Health API, para un futuro PoC
   multi-wearable. Ver [`multiwearable/variables_por_plataforma.md`](multiwearable/variables_por_plataforma.md).

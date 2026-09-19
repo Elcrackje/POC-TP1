@@ -207,6 +207,50 @@ riesgo se obtiene **después** con un corte fijo. 37 personas con puntaje real, 
 - Las columnas de etapas de sueño del CSV (`sleep_*_ratio`, 44% de las filas, 61 personas) promedian ≈1 las cuatro: parecen
   razones relativas y no proporciones de la noche. Su definición hay que confirmarla antes de usarlas.
 
+**Matiz posterior (POC 1.5, sección 6d):** la conclusión "un solo modelo sirve para cualquier corte" se comprobó con la
+señal del proxy real. En el laboratorio sintético, cuando el reloj refleja poco del puntaje, aplicar el corte a un puntaje
+estimado se contrae hacia el promedio y falla en poblaciones extremas.
+
+## 6d. POC 1.5 — laboratorio sintético con verdad conocida
+
+Notebook: [`../POC1_5/POC1_5_Sintetico.ipynb`](../POC1_5/POC1_5_Sintetico.ipynb). Datos 100% simulados (cada persona con un
+puntaje verdadero 0–21, más alto = peor, corte fijo 5), estudios de 50 personas repetidos en 30 cohortes independientes.
+**No mide desempeño real:** depende de los supuestos del simulador.
+
+**Parte 1 — qué se rompe cuando cambia la población** (nivel L4: el reloj refleja solo parte del puntaje, r = 0.7):
+
+| Población (% real en riesgo alto) | Percentil: marca / recall | Corte fijo: marca / recall | Continuo + corte: marca / recall |
+|---|---|---|---|
+| Duermen mal (77%) | 30% / 0.37 | 78% / 0.85 | 83% / 0.90 |
+| Mixta (49%) | 30% / 0.45 | 49% / 0.68 | 40% / 0.59 |
+| Duermen bien (26%) | 32% / 0.62 | 24% / 0.50 | 7% / 0.17 |
+
+- El **percentil marca ~30% en cualquier población**; donde casi todos duermen mal deja pasar a la mayoría. Su ROC-AUC no
+  cae (ordena bien): falla la decisión "riesgo alto sí o no".
+- El **corte fijo** sigue a la realidad en las tres poblaciones. El **puntaje continuo** con corte se contrae hacia el promedio
+  cuando la señal es débil: sobre-marca donde duermen mal y casi no detecta donde duermen bien.
+- **El F1 solo engaña:** en L4 el F1 del corte fijo (0.85, 0.69, 0.51) es casi el de un modelo tonto que siempre dice "alto"
+  (0.87, 0.66, 0.41). El ROC-AUC (≈ 0.75 en L4 para los tres enfoques) es la medida útil.
+
+**Parte 2 — qué esperar con 50 personas** (enfoque continuo, población mixta, ROC-AUC promedio [rango 5–95% entre estudios]):
+
+| Nivel | ROC-AUC |
+|---|---|
+| L0 limpio | 1.00 |
+| L1–L3 (ruido entre personas y datos faltantes, como LifeSnaps) | 0.97 → 0.96 |
+| L4 (el reloj refleja parte del puntaje, r = 0.7) | 0.75 [0.63 – 0.83] |
+| L5 (r = 0.5) | 0.63 [0.50 – 0.73] |
+
+Lo que más pesa es cuánto del puntaje refleja el reloj (valor real desconocido), no la suciedad de los datos. Con 50
+personas el resultado varía unos ±0.1 solo por qué personas te toquen. Positivos esperados entre 50: ~38 si la población
+duerme mal, ~24 si es mixta, ~12 si duerme bien.
+
+**Parte 3 — tamaño** (L4): ROC-AUC 0.70 [0.48 – 0.88] con 30, 0.75 [0.63 – 0.83] con 50, 0.76 [0.72 – 0.82] con 100. Más
+personas reduce sobre todo la incertidumbre, no mejora tanto el promedio.
+
+**Implicación de diseño:** el nivel de riesgo debe salir de un corte absoluto (no percentil); el clasificador con corte fijo es
+el más estable para "riesgo alto sí o no", y el puntaje continuo con su rango sirve para graduar la salida.
+
 ## 7. Siguientes pasos propuestos
 
 **A. Verificaciones de poc1:**
