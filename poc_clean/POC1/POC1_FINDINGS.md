@@ -11,6 +11,9 @@
 - **Random Forest** queda como modelo de ML1 (F1 0.478 ± 0.077, ROC-AUC 0.728 ± 0.033), elegido por interpretabilidad.
 - **Los números no son el resultado final de la tesis**, porque la etiqueta de riesgo es un proxy débil (sección 5).
   El resultado con valor científico saldrá de entrenar con el PSQI real de la Capa A.
+- **POC 1.1 (sección 6b):** usando solo las 37 personas con etiqueta real, el ROC-AUC de Random Forest sube de 0.728 a
+  0.936 (0.830 con una variante de umbral). Las 34 personas rellenadas rebajaban el resultado de POC1: el 0.73 es
+  una cota conservadora, no un techo.
 
 ## 2. Datos
 
@@ -106,6 +109,9 @@ Sleep Score de 1–100 que describe la ayuda de Google (duración, fases y resta
 no está en LifeSnaps. La equivalencia exacta sigue sin confirmarse en un diccionario oficial: ni el paper ni el
 repositorio de LifeSnaps describen esa columna.
 
+**Decisión de trabajo:** en los notebooks y documentos se sigue llamando a la etiqueta "puntaje de sueño de Fitbit",
+porque así viene en el CSV. Esta sección solo documenta de dónde sale realmente ese valor.
+
 **Consecuencias para poc1:**
 1. **Cobertura:** solo 37 de 71 personas tienen dato. Las otras 34 reciben la mediana (0.62), que queda sobre el umbral
    (0.611): quedan etiquetadas "bajo riesgo" sin medición. Las 18 personas de riesgo alto son todas de las 37 con
@@ -130,26 +136,91 @@ repositorio de LifeSnaps describen esa columna.
 - Que se predice mala calidad de sueño real.
 - Que el ROC-AUC de 0.73 sea sólido (ver riesgos).
 
-**Riesgos y sospechas sin comprobar:**
-1. El ROC-AUC podría inflarse si el modelo detecta "personas con muchos datos faltantes": las 34 sin etiqueta real
-   tienen además features rellenadas con la mediana y coinciden con la etiqueta 0.
-2. La circularidad descrita arriba.
+**Riesgos y sospechas:**
+1. Se sospechó que el ROC-AUC estuviera inflado por "personas con muchos datos faltantes". POC 1.1 apunta en sentido
+   contrario: quitar las 34 personas rellenadas *sube* el resultado, o sea que le metían ruido. La prueba directa de
+   "detector de faltantes" no se corrió (decisión del equipo).
+2. La circularidad descrita arriba sigue siendo un riesgo, y POC 1.2 mostró que el modelo se apoya más en pulso y
+   actividad que en las variables de sueño (sección 6b).
 3. **Fuga leve de preprocesamiento:** la mediana de relleno se calcula con las 71 personas antes de dividir en
    entrenamiento y prueba. No se midió su efecto.
+4. Con 37 personas los resultados de 1.1 y 1.2 son ruidosos y probablemente optimistas; además esas 37 (las que tienen
+   Stress Score) podrían no representar a las otras 34.
+
+## 6b. POC 1.1 y POC 1.2 — resultados
+
+Notebook: [`../POC1_1/POC1_1_Validacion.ipynb`](../POC1_1/POC1_1_Validacion.ipynb). Mismo pipeline y protocolo que POC1
+(Repeated Stratified 5-Fold × 20, umbral 0.5, semilla 42). El Random Forest de referencia con 71 personas reproduce
+exactamente el resultado oficial.
+
+**POC 1.1 — solo las 37 personas con etiqueta real (Random Forest).** En 1.1a se usa el umbral de POC1 (0.611); en 1.1b,
+el cuartil propio de las 37 (0.512).
+
+| Configuración | n | Prevalencia | F1 | ROC-AUC | PR-AUC (azar) |
+|---|---|---|---|---|---|
+| POC1 (71 personas) | 71 | 25.4% | 0.478 ± 0.077 | 0.728 ± 0.033 | 0.481 ± 0.046 (0.254) |
+| 1.1a (37, umbral POC1) | 37 | 48.6% | 0.849 ± 0.036 | 0.936 ± 0.020 | 0.941 ± 0.021 (0.486) |
+| 1.1b (37, cuartil propio) | 37 | 27.0% | 0.583 ± 0.067 | 0.830 ± 0.033 | 0.635 ± 0.056 (0.270) |
+
+En 1.1a, los cuatro modelos (ROC-AUC): Logistic Regression 0.951, Random Forest 0.936, SVM 0.925, XGBoost 0.909. Sus
+rangos se solapan, así que no se pueden distinguir con n=37. SVM, que fallaba en POC1 (F1 0.088), llega aquí a F1 0.862
+con clases casi balanceadas.
+
+**POC 1.2 — quitar grupos de variables (Random Forest, ROC-AUC).**
+
+| Configuración | 71 personas (POC1) | 37 personas (1.1a) |
+|---|---|---|
+| Todas (22 features) | 0.728 ± 0.033 | 0.936 ± 0.020 |
+| Sin pulso ni actividad (16) | 0.682 ± 0.027 | 0.820 ± 0.037 |
+| Sin variables de sueño (14) | 0.664 ± 0.047 | 0.918 ± 0.023 |
+
+**Lectura:**
+- Las 34 personas rellenadas no inflaban POC1; lo rebajaban. Con etiqueta real el modelo reproduce el puntaje de sueño
+  de Fitbit con un ROC-AUC de 0.83–0.94.
+- Eso **no** significa que prediga calidad de sueño real: predice un puntaje de Fitbit desde otras señales del mismo reloj.
+- Sin las variables de sueño el resultado casi no cambia (0.936 → 0.918); sin pulso ni actividad baja más (→ 0.820). El
+  modelo se apoya más en pulso y actividad. Como las variables están correlacionadas, esta prueba no aísla el aporte
+  individual de cada una.
+- Ninguna quita lleva al azar: hay señal en todos los grupos.
+
+## 6c. POC 1.3 — puntaje continuo en vez de percentil
+
+Notebook: [`../POC1_3/POC1_3_Puntaje_continuo.ipynb`](../POC1_3/POC1_3_Puntaje_continuo.ipynb). Motivo: la etiqueta por
+percentil es relativa al grupo (siempre marca ~25%), así que no funcionaría en una población donde casi todos duermen mal.
+Aquí el modelo predice un **índice continuo** (1 − puntaje de sueño de Fitbit; más alto = peor, igual que el PSQI) y el
+riesgo se obtiene **después** con un corte fijo. 37 personas con puntaje real, 5-Fold × 20.
+
+| Modelo | Spearman | MAE | R² |
+|---|---|---|---|
+| **Random Forest** | 0.697 ± 0.050 | 0.108 ± 0.005 | 0.449 ± 0.054 |
+| Ridge (lineal) | 0.709 ± 0.038 | 0.131 ± 0.010 | 0.227 ± 0.127 |
+| Baseline: siempre el promedio | — | 0.165 ± 0.004 | −0.069 ± 0.047 |
+
+- **Un solo modelo sirve para cualquier corte:** con cortes que dejan entre 22% y 78% de personas en riesgo alto, el
+  ROC-AUC va de 0.79 a 0.93 (PR-AUC muy por encima del azar en todos).
+- **Salida de ML1 ensayada:** índice estimado, rango de 90% (a partir de los errores pasados), probabilidad de superar el
+  corte, indicador de "zona gris", factores principales y calidad de datos (noches con dato, variables sin datos). Ver el
+  notebook.
+- **Límites:** el rango es ancho (errores de −0.20 a +0.30 con una desviación del índice de 0.198) y es el mismo para todas
+  las personas, aunque alguna tenga solo 6 noches. El ranking de variables es global e inestable con n=37 (aquí domina
+  `sedentary_minutes_mean`, distinto de POC1); no citarlo como hallazgo.
+- Las columnas de etapas de sueño del CSV (`sleep_*_ratio`, 44% de las filas, 61 personas) promedian ≈1 las cuatro: parecen
+  razones relativas y no proporciones de la noche. Su definición hay que confirmarla antes de usarlas.
 
 ## 7. Siguientes pasos propuestos
 
-**A. Verificaciones rápidas de poc1 (sin datos nuevos, una vez que lo apruebes):**
-1. Reevaluar con **solo las 37 personas con etiqueta real** y comparar contra 0.73.
-2. **Prueba de "detector de faltantes":** entrenar el mismo modelo para predecir "¿esta persona tiene etiqueta real?"
-   con las mismas features. Si acierta mucho, el ROC-AUC de poc1 está inflado por faltantes.
-3. **Prueba de circularidad:** repetir sin las features de frecuencia cardíaca y actividad (`resting_hr`, `steps`,
-   `sedentary_minutes`) y ver cuánto cae el rendimiento.
-4. Mover el relleno con la mediana **dentro** de cada partición (elimina la fuga leve).
+**A. Verificaciones de poc1:**
+1. **HECHO — POC 1.1:** reevaluación solo con las 37 personas con etiqueta real (sección 6b).
+2. **DESCARTADO (decisión del equipo):** prueba de "detector de faltantes".
+3. **HECHO — POC 1.2:** quitar grupos de variables. Se corrieron dos versiones: sin pulso ni actividad, y sin variables
+   de sueño (la segunda se agregó porque la etiqueta es un componente de sueño).
+4. **Pendiente, opcional:** mover el relleno con la mediana **dentro** de cada partición (elimina la fuga leve). Consiste
+   en calcular la mediana solo con las personas de entrenamiento y aplicarla a las de prueba.
 
-**B. Documentación (antes de mostrar el notebook al asesor):**
-5. Corregir las celdas del notebook que aún llaman a la columna "puntaje de sueño de Fitbit", y reflejar las
-   limitaciones de la sección 5 en `poc1/README.md`, `poc1/FINDINGS_POC1.md` y `CLAUDE.md`.
+**B. Documentación:**
+5. **Decisión:** se mantiene el nombre "puntaje de sueño de Fitbit" y no se editan las celdas del notebook de POC1.
+   Pendiente, a decisión del equipo: reflejar la sección 5 y los resultados de 6b en `poc1/README.md`,
+   `poc1/FINDINGS_POC1.md` y `CLAUDE.md`.
 
 **C. Lo que sostiene la tesis (empezar ya: tiene el plazo más largo):**
 6. **Plan de la Capa A (PSQI):** n≥50; PSQI (mala calidad si ≥5) y datos de reloj del **mismo mes** que evalúa el
