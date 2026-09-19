@@ -8,6 +8,7 @@ App que predice el riesgo de mala calidad de sueño en estudiantes universitario
 
 ## Decisiones ya cerradas (no las relitigues)
 
+- **Contexto de la tesis y criterio de éxito (definido en conversación).** Es una tesis de **ingeniería de software**: el producto es la app; ML1 es un componente que aporta, no el fin. La validación final tendrá **como máximo ~50 usuarios**. No se persigue maximizar el F1: se busca un sistema que funcione de punta a punta y un ML1 con señal demostrable por encima del azar, con incertidumbre reportada y factores explicables. El criterio numérico de aceptación de ML1 se fija con el asesor (no inventar un umbral). Por ahora el usuario pidió **dejar el PSQI en pausa** y enfocarse en los PoC.
 - **Random Forest elegido para ML1 por interpretabilidad**, para poder alimentarle al LLM un ranking de factores de riesgo explicable. Se comparó contra Logistic Regression, XGBoost y SVM con la misma metodología (ver poc1) — RF no pierde desempeño relevante y gana interpretabilidad. Esto ya se validó, no hay que reabrir la discusión de "qué modelo usar" sin una razón nueva y concreta.
 - **Deep Learning descartado para ML1, con respaldo de literatura (no es una suposición).** Se le preguntó explícitamente a la literatura de la tesis (vía NotebookLM, con las fuentes cargadas del proyecto) si algún estudio usa o recomienda DL para clasificación de riesgo sobre datos tabulares agregados por persona con n<200. Respuesta con cita: ninguna fuente lo hace — los usos de DL en la literatura del dominio son sobre señales crudas época-por-época (otra tarea, ej. Kim et al. 2025 para apnea). La misma consulta identificó SVM como el modelo clásico "pendiente" que sí respalda la literatura (Aziz et al. 2025: 3er algoritmo más usado en 46 estudios de wearables, 26.1%, detrás de RF). Por eso se agregó SVM a la comparación de poc1 y no se agregó DL. No relitigar esto sin una fuente nueva y concreta.
 - **El riesgo es un constructo estable de la PERSONA, no de una noche puntual.** Ya validado en un análisis de autocorrelación/estabilidad previo (r=0.727): la calidad de sueño noche-a-noche es ~impredecible (lag-1 autocorr ≈ 0), pero el riesgo agregado por persona es estable. Todo el feature engineering agrega a nivel de persona (mean/std entre días), nunca predice noche por noche.
@@ -83,6 +84,13 @@ Datos generados por nosotros (no de ningún dataset público), con un `latent_ri
 - **La laptop original (donde se hizo poc1/poc2):** Python 3.14 en `/c/Python314/python` — puede no aplicar en esta PC, ver punto anterior.
 - `C:\develop\tesis\POC 1\` (con espacio, ruta de la laptop original) / `POC 1/` (respaldo intacto que viajó con el repo) — estado de poc1 antes de la sesión de limpieza, no se usa activamente. El trabajo vigente está en `poc1/` (sin espacio) y `poc_clean/`.
 - El dataset crudo completo de LifeSnaps (incluyendo el dump de Mongo, ~9GB, no usado por ningún script) vive fuera del repo en `F:\Developing\Tesis\POC\rais_anonymized_raw\` — los CSV que sí se usan ya están commiteados dentro de `poc1/rais_anonymized/rais_anonymized/` y copiados en `poc_clean/POC1/data/`.
+
+## Forma de trabajar con el usuario
+
+- No es estadístico y debe poder explicarle todo a su asesor/coautor: explicar en español sencillo, con números reales de los datos, y verificar con datos antes de afirmar.
+- No inventar literatura ni cifras. Si no hay fuente, darle un prompt para su NotebookLM (tiene sus fuentes cargadas) en vez de suponer.
+- No modificar `poc1/README.md` sin visto bueno explícito (pidió esperar). La etiqueta se sigue llamando "puntaje de sueño de Fitbit".
+- Los notebooks de `poc_clean/` son la fuente de verdad; correrlos con `PYTHONUTF8=1` en Windows (`jupyter nbconvert --to notebook --execute --inplace`).
 
 ## Disciplina a mantener en cualquier PoC nuevo
 
