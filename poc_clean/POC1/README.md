@@ -24,11 +24,12 @@ puede correr y leer por partes, con cada paso documentado en su propia celda.
 5. **Modelo 1 — Random Forest** (el elegido para producción): resultados.
 6. **Modelo 2 — Regresión Logística**: resultados.
 7. **Modelo 3 — XGBoost**: resultados.
-8. Tabla y gráfico comparativo de los tres modelos.
-9. Feature importance del modelo elegido: Gini vs. Permutation importance.
-10. Ejemplo del payload que ML1 le entregaría al LLM.
-11. Conclusiones y limitaciones honestas.
-12. Próximos pasos.
+8. **Modelo 4 — SVM**: resultados (agregado con respaldo de literatura, ver abajo).
+9. Tabla y gráfico comparativo de los cuatro modelos.
+10. Feature importance del modelo elegido: Gini vs. Permutation importance.
+11. Ejemplo del payload que ML1 le entregaría al LLM.
+12. Conclusiones y limitaciones honestas.
+13. Próximos pasos.
 
 Todos los números fueron verificados contra los resultados ya oficiales de `poc1/` — son
 idénticos (F1 = 0.478 ± 0.077, ROC-AUC = 0.728 ± 0.033 para Random Forest).
@@ -38,16 +39,10 @@ es un proxy (sleep score de Fitbit), no el PSQI real. Estos resultados no son el
 para el TI — sirven para mostrar que el pipeline funciona y comparar modelos, mientras se
 consiguen los datos reales de la encuesta PSQI (Capa A).
 
-## Pendiente: ¿Deep Learning u otros modelos según la literatura?
+## Deep Learning vs. SVM — ya resuelto con literatura (no es una suposición)
 
-No se agregó ninguna comparación con Deep Learning en este notebook. Con n=71 personas, un
-modelo de Deep Learning muy probablemente no es apropiado (altísimo riesgo de sobreajuste con tan
-pocos datos) — pero esa es una intuición, no algo que se deba meter al TI sin respaldo de tu
-propia revisión de literatura.
-
-Usa el siguiente prompt en tu herramienta de literatura (la que ya tiene cargados tus PDFs/fuentes
-de la tesis) y pásame la respuesta — con eso se agrega la comparación correspondiente sin inventar
-nada:
+Se le preguntó directamente a la herramienta de literatura de la tesis (NotebookLM, con las
+fuentes cargadas del proyecto) el siguiente prompt:
 
 ```
 Contexto: mi tesis predice riesgo de mala calidad de sueño en estudiantes universitarios a
@@ -73,6 +68,33 @@ afirmación, no inventes ni generalices de memoria):
    generalizar con conocimiento general de machine learning.
 ```
 
-Cuando tengas la respuesta, la comparación adicional (si corresponde) se agrega como una sección
-más del notebook, con las mismas 20 repeticiones de Repeated Stratified K-Fold que ya usan los
-otros tres modelos, para que siga siendo comparable.
+**Respuesta (resumen; el detalle completo con citas está en el chat de la tesis, no reproducido
+aquí para no duplicar el texto largo):**
+
+1. **Ninguna fuente usa o recomienda Deep Learning** para clasificar riesgo sobre datos
+   tabulares agregados por persona con n<200. Las fuentes que sí usan DL (ej. Kim et al. 2025,
+   "SleepWatcher") lo hacen sobre señales crudas época-por-época (segundos/minutos) — otra
+   tarea distinta a la de este PoC. Para datos tabulares/agregados, la literatura recurre a
+   Random Forest (30.4% de 46 estudios, Aziz et al. 2025) o SVM (26.1%).
+2. No hay una advertencia textual explícita sobre sobreajuste de DL en este dominio con n
+   chica, pero sí hay consenso indirecto: Aziz et al. (2025) recomienda K-Fold CV para muestras
+   chicas, y de Zambotti et al. (2024) / Chee et al. (2025) advierten sobre falta de
+   generalización de modelos entrenados en muestras pequeñas o de conveniencia.
+3. **SVM** es el modelo clásico que falta probar — 3er algoritmo más usado en la revisión de
+   Aziz et al. (2025), justo detrás de RF. Ya se agregó a la comparación (ver notebook).
+4. Confirmado explícitamente: ninguna fuente evalúa DL para este caso de uso específico. El
+   diseño experimental actual (Repeated Stratified 5-Fold × 20, F1/ROC-AUC/PR-AUC vs. baseline)
+   es, según la misma respuesta, "el esquema metodológico más riguroso y alineado con las
+   recomendaciones" de las fuentes revisadas.
+
+**Conclusión aplicada:** no se agregó Deep Learning (sin respaldo de literatura para este n y
+este tipo de dato). Se agregó **SVM** a la comparación de modelos, con el mismo protocolo de
+evaluación (Repeated Stratified 5-Fold × 20). Resultado: F1 = 0.088 ± 0.092, ROC-AUC = 0.668 ±
+0.039, PR-AUC = 0.397 ± 0.044 — el ROC-AUC es razonable (similar al de LR), pero el F1 sale muy
+bajo, probablemente por inestabilidad en la calibración interna de `predict_proba` de `SVC`
+(Platt scaling) con una clase minoritaria tan chica (~18 personas en n=71). Se reporta tal cual,
+sin ajustar el umbral de decisión para mejorar el número — el objetivo es una comparación justa
+entre los cuatro modelos, no maximizar el resultado de uno en particular.
+
+La misma respuesta de NotebookLM mencionó, como sugerencia adicional, correr también SVM sobre
+el mismo protocolo — ya se hizo, es el modelo 4 del notebook.

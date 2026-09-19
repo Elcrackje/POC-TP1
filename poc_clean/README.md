@@ -9,5 +9,8 @@ completo del proyecto.
 
 ## Contenido
 
-- [`POC1/`](POC1/) — ML1 (Random Forest, con comparación contra Logistic Regression y XGBoost)
+- [`POC1/`](POC1/) — ML1 (Random Forest, con comparación contra Logistic Regression, XGBoost y SVM)
   sobre datos reales de LifeSnaps (n=71). Ver [`POC1/README.md`](POC1/README.md).
+- [`multiwearable/`](multiwearable/) — investigación (sin PoC corrido) de qué variables entrega cada marca de reloj
+  Android (Fitbit, Samsung, Amazfit, Xiaomi) vía Health Connect / Google Health API, para un futuro PoC
+  multi-wearable. Ver [`multiwearable/variables_por_plataforma.md`](multiwearable/variables_por_plataforma.md).

@@ -1,11 +1,11 @@
 """
-PoC — HapSleep C2: Comparación LR / Random Forest / XGBoost
-=============================================================
+PoC — HapSleep C2: Comparación LR / Random Forest / XGBoost / SVM
+==================================================================
 
 Complementa poc_c2_random_forest.py (el modelo elegido para C2 es RF, por
 interpretabilidad — decisión ya cerrada, ver README). Este script existe
-solo para documentar en el TI cómo se compara RF contra Regresión Logística
-y XGBoost, usando el MISMO pipeline limpio (sin fuga de datos, ver
+solo para documentar en el TI cómo se compara RF contra Regresión Logística,
+XGBoost y SVM, usando el MISMO pipeline limpio (sin fuga de datos, ver
 build_risk_label en poc_c2_random_forest.py) y la MISMA metodología robusta
 (Repeated Stratified 5-Fold, 20 repeticiones) que ya se usa para reportar
 las métricas oficiales de RF.
@@ -15,8 +15,20 @@ corrido antes: ese número (igual que el F1=0.25 original de RF) salió de
 una sola corrida de CV. Ya se demostró en este PoC que una sola partición
 con n=71 tiene varianza enorme (el F1 de RF osciló entre 0.29 y 0.61 solo
 por semilla) — comparar un LR de una sola corrida contra un RF promediado
-en 20 repeticiones no sería una comparación justa. Aquí los tres modelos
+en 20 repeticiones no sería una comparación justa. Aquí los cuatro modelos
 se evalúan exactamente igual.
+
+SVM se agregó después de consultar la literatura de la tesis (vía
+NotebookLM, con las fuentes cargadas del proyecto) sobre si Deep Learning
+era apropiado dado n=71-150: la respuesta, con cita de fuente, fue que
+ninguna fuente usa o recomienda Deep Learning para clasificación de riesgo
+sobre datos tabulares agregados por persona con n<200 (los usos de DL en
+las fuentes son sobre señales crudas época-por-época, otra tarea) — y que
+SVM es el modelo clásico "pendiente" en la literatura del dominio: Aziz et
+al. (2025), en su revisión de 46 estudios de IA en wearables, lo ubica como
+el tercer algoritmo más usado (26.1%), justo detrás de Random Forest
+(30.4%). Ver poc_clean/POC1/README.md para el prompt exacto y la respuesta
+completa.
 """
 import sys
 
@@ -26,6 +38,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.model_selection import StratifiedKFold, cross_val_predict
 from sklearn.metrics import (
     precision_score, recall_score, f1_score, roc_auc_score, average_precision_score,
@@ -49,6 +62,13 @@ def make_lr(seed):
     return make_pipeline(
         StandardScaler(),
         LogisticRegression(class_weight="balanced", max_iter=2000, random_state=seed),
+    )
+
+
+def make_svm(seed):
+    return make_pipeline(
+        StandardScaler(),  # SVM es sensible a la escala, igual que LR
+        SVC(kernel="rbf", class_weight="balanced", probability=True, random_state=seed),
     )
 
 
@@ -105,6 +125,7 @@ def main():
         "logistic_regression": lambda seed: make_lr(seed),
         "random_forest": lambda seed: poc.make_rf(seed),
         "xgboost": make_xgb,
+        "svm": lambda seed: make_svm(seed),
     }
 
     results = {}

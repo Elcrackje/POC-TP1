@@ -8,7 +8,8 @@ App que predice el riesgo de mala calidad de sueño en estudiantes universitario
 
 ## Decisiones ya cerradas (no las relitigues)
 
-- **Random Forest elegido para ML1 por interpretabilidad**, para poder alimentarle al LLM un ranking de factores de riesgo explicable. Se comparó contra Logistic Regression y XGBoost con la misma metodología (ver poc1) — RF no pierde desempeño relevante y gana interpretabilidad. Esto ya se validó, no hay que reabrir la discusión de "qué modelo usar" sin una razón nueva y concreta.
+- **Random Forest elegido para ML1 por interpretabilidad**, para poder alimentarle al LLM un ranking de factores de riesgo explicable. Se comparó contra Logistic Regression, XGBoost y SVM con la misma metodología (ver poc1) — RF no pierde desempeño relevante y gana interpretabilidad. Esto ya se validó, no hay que reabrir la discusión de "qué modelo usar" sin una razón nueva y concreta.
+- **Deep Learning descartado para ML1, con respaldo de literatura (no es una suposición).** Se le preguntó explícitamente a la literatura de la tesis (vía NotebookLM, con las fuentes cargadas del proyecto) si algún estudio usa o recomienda DL para clasificación de riesgo sobre datos tabulares agregados por persona con n<200. Respuesta con cita: ninguna fuente lo hace — los usos de DL en la literatura del dominio son sobre señales crudas época-por-época (otra tarea, ej. Kim et al. 2025 para apnea). La misma consulta identificó SVM como el modelo clásico "pendiente" que sí respalda la literatura (Aziz et al. 2025: 3er algoritmo más usado en 46 estudios de wearables, 26.1%, detrás de RF). Por eso se agregó SVM a la comparación de poc1 y no se agregó DL. No relitigar esto sin una fuente nueva y concreta.
 - **El riesgo es un constructo estable de la PERSONA, no de una noche puntual.** Ya validado en un análisis de autocorrelación/estabilidad previo (r=0.727): la calidad de sueño noche-a-noche es ~impredecible (lag-1 autocorr ≈ 0), pero el riesgo agregado por persona es estable. Todo el feature engineering agrega a nivel de persona (mean/std entre días), nunca predice noche por noche.
 - **Nunca reportar accuracy pelada con clases desbalanceadas** (~25% de riesgo alto). Siempre F1 + ROC-AUC + PR-AUC contra un baseline trivial (predice siempre la clase mayoritaria).
 - **Un solo K-Fold no alcanza con esta n.** Se comprobó empíricamente (poc1) que un solo Stratified 5-Fold tiene varianza enorme con n=71-150: el F1 de una sola corrida osciló entre 0.29 y 0.61 solo por la semilla del split. **Siempre usar Repeated Stratified K-Fold (20 repeticiones) y reportar mean ± std**, no un solo número. Esto aplica a cualquier PoC nuevo que evalúe un modelo.
@@ -40,10 +41,20 @@ Dataset real: LifeSnaps (Fitbit Sense), Nature *Scientific Data* 2022, n=71 pers
 - El F1=0.25 que se documentó originalmente (una sola corrida de 5-Fold) NO era el techo real del problema — era una corrida particularmente desafortunada. El número honesto es el de arriba.
 - Se probó agregar STAI (ansiedad) y PANAS (afecto) del export completo de encuestas de LifeSnaps como features psicológicas — no mejoran el modelo de forma robusta bajo repeated CV (parecía que sí con una sola semilla; era ruido). Se descartaron del pipeline oficial. Código del experimento en `poc1/checks/robustness_check.py` por si mejora la cobertura de encuestas (hoy 53-51/71 personas) y vale la pena reintentarlo.
 - Gini importance y permutation importance NO coinciden en el top-1 factor exacto (`minutesAwake_std` vs. `sedentary_minutes_mean`), pero las magnitudes son marginales y el top-4 cluster es estable: inconsistencia de sueño/vigilia noche a noche + inactividad. Recomendación de diseño: el payload C2→LLM debería comunicar "factores principales" en plural, no un solo ganador.
-- LR vs. RF vs. XGBoost (misma metodología): ningún modelo domina en todo. RF tiene mejor F1 (0.478), XGBoost mejor ROC-AUC/PR-AUC (0.755/0.493) pero peor recall (0.356), LR competitivo en F1 pero ROC-AUC más bajo (0.669).
+- LR vs. RF vs. XGBoost vs. SVM (misma metodología): ningún modelo domina en todo. RF tiene mejor F1 (0.478), XGBoost mejor ROC-AUC/PR-AUC (0.755/0.493) pero peor recall (0.356), LR competitivo en F1 pero ROC-AUC más bajo (0.669). SVM (agregado después, ver "Deep Learning descartado" arriba) da F1 muy bajo (0.088) pese a ROC-AUC razonable (0.668) — probable inestabilidad de la calibración interna de `predict_proba` (Platt scaling) con una clase minoritaria tan chica; se reportó tal cual, sin ajustar el umbral para mejorar el número.
 - No existe un benchmark de la literatura directamente comparable (n≈70-100 universitarios, riesgo por persona, RF) — documentado con 7 papers/revisión en `poc1/README.md`, sección "Contexto de benchmark en la literatura". Razón: task mismatch (la mayoría evalúa clasificación época-por-época contra PSG) y population mismatch (el único ROC-AUC alto de la literatura es en adultos mayores con regresión logística).
 
 **Pendiente de poc1:** `poc1/discusion_cap4_metricas.md` tiene un borrador de discusión para el Cap. 4 del TI (por qué F1+ROC-AUC en vez de accuracy) — NO está incorporado a ningún `.docx` todavía, y las citas vienen de una búsqueda asistida (NotebookLM) que no se verificó contra los PDFs originales.
+
+## poc_clean/ — versiones "de presentación" para el asesor
+
+`poc_clean/POC1/POC1_HapSleep.ipynb` es un notebook Jupyter, documentado y ejecutado
+celda por celda, que reproduce EXACTAMENTE el pipeline y los resultados oficiales de
+`poc1/` (RF/LR/XGBoost/SVM) — no introduce metodología nueva, solo reordena y documenta
+para mostrar avances. Los números se verificaron idénticos a los de `poc1/` antes de darlo
+por bueno. Si se agrega otro PoC "de presentación" en el futuro, sigue el mismo patrón:
+notebook ejecutado con outputs guardados + README con el prompt/respuesta de literatura que
+respalde cualquier extensión metodológica (no inventar nada sin ese respaldo).
 
 ## poc2/ — ML1 sobre datos SINTÉTICOS de wearable (n=150)
 
@@ -64,12 +75,14 @@ Datos generados por nosotros (no de ningún dataset público), con un `latent_ri
 2. Revisar y verificar `poc1/discusion_cap4_metricas.md` contra las fuentes primarias antes de incorporarlo al `.docx` del TI.
 3. Cuando existan los datos reales de PSQI (Capa A), reemplazar la etiqueta proxy en poc1 y volver a correr todo el pipeline — los resultados actuales no son finales.
 4. Si se quiere estresar más el pipeline de poc2 (no solo confirmarlo), repetir con más ruido / missing data inyectado / relación no lineal entre features y riesgo.
+5. **PoC multi-wearable (después de cerrar poc1):** investigación ya hecha en `poc_clean/multiwearable/variables_por_plataforma.md` (qué variables entrega cada reloj Android vía Health Connect / Google Health API). Ese documento también recoge hallazgos sobre la etiqueta de poc1 aún no reflejados en este archivo ni en `poc1/README.md`: `sleep_points_percentage` no es un Sleep Score (es un derivado del Stress Score de Fitbit, solo 37/71 personas; las otras 34 quedan etiquetadas "bajo riesgo" por imputación). Falta decidir cómo documentarlo y correr la verificación con solo las 37 personas.
 
 ## Notas de entorno
 
-- Python 3.14 (`/c/Python314/python` en este equipo — puede variar en otra máquina).
-- Paquetes usados: `pandas numpy scikit-learn scipy xgboost`.
-- `C:\develop\tesis\POC 1\` (con espacio en el nombre) es un **respaldo intacto** del estado de poc1 antes de la sesión de limpieza — ya no se usa activamente, el trabajo vigente está en `poc1/` (sin espacio).
+- **Esta PC (la de la sesión de "poc_clean"):** Python 3.11.9 vía Microsoft Store, con un venv del proyecto en `.venv/` (activar con `.\.venv\Scripts\Activate.ps1`). El `python.exe`/`python3.exe` genéricos de Windows tenían el App Execution Alias deshabilitado — se armó un shim en `C:\Users\josec\bin\` + PATH de usuario para que `python`/`pip` funcionen en cualquier terminal nueva. Paquetes instalados: `pandas numpy scikit-learn scipy xgboost jupyter nbformat nbclient ipykernel matplotlib seaborn`.
+- **La laptop original (donde se hizo poc1/poc2):** Python 3.14 en `/c/Python314/python` — puede no aplicar en esta PC, ver punto anterior.
+- `C:\develop\tesis\POC 1\` (con espacio, ruta de la laptop original) / `POC 1/` (respaldo intacto que viajó con el repo) — estado de poc1 antes de la sesión de limpieza, no se usa activamente. El trabajo vigente está en `poc1/` (sin espacio) y `poc_clean/`.
+- El dataset crudo completo de LifeSnaps (incluyendo el dump de Mongo, ~9GB, no usado por ningún script) vive fuera del repo en `F:\Developing\Tesis\POC\rais_anonymized_raw\` — los CSV que sí se usan ya están commiteados dentro de `poc1/rais_anonymized/rais_anonymized/` y copiados en `poc_clean/POC1/data/`.
 
 ## Disciplina a mantener en cualquier PoC nuevo
 

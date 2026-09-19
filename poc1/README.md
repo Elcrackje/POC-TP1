@@ -73,17 +73,22 @@ Por eso este PoC no presenta una tabla "mi modelo vs. la literatura" — el hall
 
 ## Validación adicional (post-hoc)
 
-### Comparación LR / Random Forest / XGBoost
+### Comparación LR / Random Forest / XGBoost / SVM
 
-`poc_c2_model_comparison.py` evalúa los tres modelos con el mismo pipeline sin fuga y la misma metodología (Repeated Stratified 5-Fold, 20 repeticiones) que el modelo oficial de C2 — para que sea una comparación justa y no se mezcle un número de una sola corrida (como el F1=0.248 de LR que se había corrido antes en otro análisis) con el RF ya promediado.
+`poc_c2_model_comparison.py` evalúa los cuatro modelos con el mismo pipeline sin fuga y la misma metodología (Repeated Stratified 5-Fold, 20 repeticiones) que el modelo oficial de C2 — para que sea una comparación justa y no se mezcle un número de una sola corrida (como el F1=0.248 de LR que se había corrido antes en otro análisis) con el RF ya promediado.
+
+SVM se agregó después de preguntarle a la literatura de la tesis (vía NotebookLM, con las fuentes cargadas del proyecto) si Deep Learning era apropiado dado n=71-150. Respuesta con cita de fuente: ninguna fuente usa o recomienda Deep Learning para clasificación de riesgo sobre datos tabulares agregados por persona con n<200 (los usos de DL en las fuentes son sobre señales crudas época-por-época — otra tarea, ver Kim et al. 2025); en cambio, Aziz et al. (2025), en su revisión de 46 estudios de IA en wearables, ubica a SVM como el tercer algoritmo más usado (26.1%), justo detrás de Random Forest (30.4%) — el modelo clásico "pendiente" que la literatura del dominio sí respalda. Prompt completo y respuesta en `poc_clean/POC1/README.md`.
 
 | Modelo | F1 | ROC-AUC | PR-AUC |
 |---|---|---|---|
 | Logistic Regression | 0.462 ± 0.078 | 0.669 ± 0.051 | 0.428 ± 0.059 |
 | **Random Forest (elegido)** | **0.478 ± 0.077** | 0.728 ± 0.033 | 0.481 ± 0.046 |
 | XGBoost | 0.414 ± 0.077 | 0.755 ± 0.037 | 0.493 ± 0.049 |
+| SVM (RBF, `probability=True`) | 0.088 ± 0.092 | 0.668 ± 0.039 | 0.397 ± 0.046 |
 
-Ningún modelo domina en las tres métricas: RF tiene el mejor F1 (aunque casi empatado con LR, dentro de 1 std), XGBoost tiene mejor ROC-AUC/PR-AUC pero el peor recall (0.356) y F1 de los tres. Esto refuerza — no contradice — la decisión ya cerrada de usar RF por interpretabilidad: no se sacrifica desempeño relevante por elegir el modelo que además es más fácil de explicarle al LLM (C3) y al usuario final.
+Ningún modelo domina en las tres métricas: RF tiene el mejor F1 (aunque casi empatado con LR, dentro de 1 std), XGBoost tiene mejor ROC-AUC/PR-AUC pero el peor recall (0.356) de los tres. Esto refuerza — no contradice — la decisión ya cerrada de usar RF por interpretabilidad: no se sacrifica desempeño relevante por elegir el modelo que además es más fácil de explicarle al LLM (C3) y al usuario final.
+
+**SVM, a pesar de estar respaldado por la literatura, da un F1 muy bajo aquí (0.088)** pese a un ROC-AUC razonable (0.668, comparable al de LR) — la causa más probable es que `predict_proba` de `SVC` se calibra internamente con su propio 5-Fold (Platt scaling), y con una clase minoritaria de ~18 personas en n=71, esa calibración interna es inestable y termina empujando casi todas las probabilidades por debajo de 0.5. No se "arregló" ajustando el umbral de decisión para hacer ver mejor a SVM — se reporta tal como salió, con el mismo umbral 0.5 que los otros tres modelos, porque el punto de este PoC es la comparación justa, no maximizar el número de cada modelo.
 
 ### Gini importance vs. Permutation importance
 

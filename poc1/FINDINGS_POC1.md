@@ -33,15 +33,16 @@ Resumen de lo hecho y encontrado en esta sesión de trabajo sobre el PoC del mot
 
 3. **El ranking de "factor de riesgo top" no es tan estable como parece.** Gini importance pone `minutesAwake_std` primero; permutation importance pone `sedentary_minutes_mean` primero. La diferencia entre ambos es marginal en magnitud (0.0015 vs. 0.0010 sobre ROC-AUC) — el top-4 cluster sí es estable: inconsistencia de sueño/vigilia noche a noche (`minutesAwake_std`, `sleep_duration_inconsistency`, `minutesAsleep_mean`) e inactividad (`sedentary_minutes_mean`). **Implicación de diseño:** el payload C2→C3 debería comunicarle a C3 (el LLM) "los factores principales" en plural, no un único ganador — ya se le manda el ranking completo en `feature_importance_ranked`, solo falta que el prompt de C3 lo use así.
 
-4. **Ningún modelo (LR/RF/XGBoost) domina en todo, y eso favorece la decisión ya tomada de usar RF por interpretabilidad:**
+4. **Ningún modelo (LR/RF/XGBoost/SVM) domina en todo, y eso favorece la decisión ya tomada de usar RF por interpretabilidad:**
 
    | Modelo | F1 | ROC-AUC | PR-AUC |
    |---|---|---|---|
    | Logistic Regression | 0.462 ± 0.078 | 0.669 ± 0.051 | 0.428 ± 0.059 |
    | **Random Forest** | **0.478 ± 0.077** | 0.728 ± 0.033 | 0.481 ± 0.046 |
    | XGBoost | 0.414 ± 0.077 | 0.755 ± 0.037 | 0.493 ± 0.049 |
+   | SVM | 0.088 ± 0.092 | 0.668 ± 0.039 | 0.397 ± 0.046 |
 
-   RF tiene el mejor F1, XGBoost mejor ROC-AUC/PR-AUC pero el peor recall de los tres (0.356) — usar RF no cuesta desempeño relevante y sí gana interpretabilidad para alimentar a C3.
+   RF tiene el mejor F1, XGBoost mejor ROC-AUC/PR-AUC pero el peor recall de los tres (0.356) — usar RF no cuesta desempeño relevante y sí gana interpretabilidad para alimentar a C3. SVM se agregó en una sesión posterior, después de confirmar con la literatura de la tesis (vía NotebookLM) que Deep Learning no está respaldado para n<200 con datos tabulares agregados, y que SVM sí es el modelo clásico que la literatura del dominio sugiere probar (Aziz et al. 2025: 3er algoritmo más usado en 46 estudios de IA en wearables). Su F1 salió muy bajo pese a un ROC-AUC razonable — probablemente por inestabilidad en la calibración interna de `predict_proba` (Platt scaling) con una clase minoritaria tan chica. Se reporta tal cual, sin ajustar el umbral para mejorar el número.
 
 5. **No existe un benchmark de la literatura directamente comparable** a esta tarea (n≈70-100 universitarios, riesgo por persona, RF). Razones documentadas en el README: task mismatch (la mayoría evalúa clasificación época-por-época contra PSG, no riesgo por persona), population mismatch (el único ROC-AUC alto de la literatura revisada es en adultos mayores preoperatorios con regresión logística), y falta de cifra equivalente (el único estudio con universitarios y RF no reporta F1/ROC-AUC). Esto es consistente con lo que reporta Aziz et al. (2025): menos del 35% de 46 estudios de IA en wearables publican F1-Score.
 
