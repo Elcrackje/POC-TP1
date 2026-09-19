@@ -13,3 +13,5 @@ __pycache__/
 # Entornos virtuales, por si acaso
 .venv/
 venv/
+
+paper_es.md
