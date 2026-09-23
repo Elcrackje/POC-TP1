@@ -21,6 +21,10 @@ completo del proyecto.
   puntaje continuo cuando la población cambia (todos duermen mal, mixta, todos bien), y estima qué esperar con 50 personas
   según cuánto del puntaje refleje el reloj. No mide desempeño real. Notebook:
   [`POC1_5/POC1_5_Sintetico.ipynb`](POC1_5/POC1_5_Sintetico.ipynb).
+- [`POC_FINAL/`](POC_FINAL/) — POC final: explicaciones SHAP agrupadas + regla de niveles Leve / Moderado / Alto +
+  payload para el LLM. Notebook: [`POC_FINAL/POC_Final_SHAP.ipynb`](POC_FINAL/POC_Final_SHAP.ipynb).
+- [`INFORME_POCs.md`](INFORME_POCs.md) — informe corto de todos los PoC (POC1, 1.3, 1.5, final), cortes de niveles y
+  por qué el PSQI real sería mejor.
 - [`multiwearable/`](multiwearable/) — investigación (sin PoC corrido) de qué variables entrega cada marca de reloj
   Android (Fitbit, Samsung, Amazfit, Xiaomi) vía Health Connect / Google Health API, para un futuro PoC
   multi-wearable. Ver [`multiwearable/variables_por_plataforma.md`](multiwearable/variables_por_plataforma.md).
