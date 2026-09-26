@@ -1,0 +1,8 @@
+# Los datos NO se suben a git (pesan y pueden tener licencia). Solo se versionan las fichas.
+*
+!.gitignore
+!README.md
+!*/
+!*/*/
+!*/FUENTE.md
+!*/*/FUENTE.md
