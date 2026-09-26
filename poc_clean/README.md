@@ -25,6 +25,9 @@ completo del proyecto.
   payload para el LLM. Notebook: [`POC_FINAL/POC_Final_SHAP.ipynb`](POC_FINAL/POC_Final_SHAP.ipynb).
 - [`INFORME_POCs.md`](INFORME_POCs.md) — informe corto de todos los PoC (POC1, 1.3, 1.5, final), cortes de niveles y
   por qué el PSQI real sería mejor.
-- [`multiwearable/`](multiwearable/) — investigación (sin PoC corrido) de qué variables entrega cada marca de reloj
-  Android (Fitbit, Samsung, Amazfit, Xiaomi) vía Health Connect / Google Health API, para un futuro PoC
-  multi-wearable. Ver [`multiwearable/variables_por_plataforma.md`](multiwearable/variables_por_plataforma.md).
+- [`multiwearable/`](multiwearable/) — PoC multi-wearable: investigación de qué variables entrega cada marca de reloj
+  Android (Fitbit, Samsung, Amazfit, Xiaomi) vía Health Connect / Google Health API
+  ([`variables_por_plataforma.md`](multiwearable/variables_por_plataforma.md)) y un ensayo exploratorio
+  ([`POC_Multiwearable.ipynb`](multiwearable/POC_Multiwearable.ipynb)): costo de usar solo las variables de cada reloj y
+  prototipo de la capa de estandarización. Con datos reales de Xiaomi y el PSQI de MMASH:
+  [`POC_Multiwearable_Datos_Reales.ipynb`](multiwearable/POC_Multiwearable_Datos_Reales.ipynb).

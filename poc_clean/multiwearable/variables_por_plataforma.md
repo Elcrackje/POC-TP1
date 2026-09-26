@@ -110,7 +110,9 @@ Google Health API lo exponen como campo** (según lo leído).
   variables con su propio algoritmo. La literatura de la tesis lo respalda: Lee et al. (2023) comparó 11
   dispositivos y su macro F1 varía de 0.26 a 0.69 según el dispositivo.
 
-## 6. Propuesta de PoC multi-wearable (NO ejecutado)
+## 6. PoC multi-wearable
+
+**Actualización:** se corrió un ensayo exploratorio (partes A y B) en [`POC_Multiwearable.ipynb`](POC_Multiwearable.ipynb): el modelo con solo las variables de cada reloj pierde bastante (Spearman 0.70 a 0.36–0.43) y casi todo por los minutos sedentarios; la capa de estandarización funciona como software. No mide diferencias reales entre marcas (solo hay datos de Fitbit). Abajo, la propuesta original:
 
 1. Definir el **conjunto mínimo común** de variables que las marcas objetivo puedan entregar.
 2. Con LifeSnaps, entrenar con solo ese conjunto y compararlo contra el modelo completo, con el mismo protocolo
